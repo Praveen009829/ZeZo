@@ -185,7 +185,6 @@ const MovieDetail = () => {
                       ? `https://vidsrc.to/embed/movie/${id}`
                       : `https://vidsrc.to/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
                   }
-                  sandbox="allow-scripts allow-same-origin"
                   allowFullScreen
                   title="Player"
                   width="100%"
