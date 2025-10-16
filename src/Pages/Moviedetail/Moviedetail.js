@@ -7,7 +7,7 @@ import "./MovieDetail.css";
 const API_KEY = "810956bc58bd77494f5bb7313c720908";
 
 const MovieDetail = () => {
-  const { type, id } = useParams(); 
+  const { type, id } = useParams();
   const [data, setData] = useState(null);
   const [trailerKey, setTrailerKey] = useState(null);
   const [cast, setCast] = useState([]);
@@ -20,14 +20,12 @@ const MovieDetail = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch details (movie or tv)
         const res = await fetch(
           `https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=en-US`
         );
         const data = await res.json();
         setData(data);
 
-        // Fetch trailer
         const trailerRes = await fetch(
           `https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${API_KEY}&language=en-US`
         );
@@ -37,14 +35,12 @@ const MovieDetail = () => {
         )?.key;
         setTrailerKey(key);
 
-        // Fetch cast
         const castRes = await fetch(
           `https://api.themoviedb.org/3/${type}/${id}/credits?api_key=${API_KEY}&language=en-US`
         );
         const castData = await castRes.json();
         setCast(castData.cast?.slice(0, 8) || []);
 
-        // For TV shows, load first season episodes
         if (type === "tv") {
           const epRes = await fetch(
             `https://api.themoviedb.org/3/tv/${id}/season/1?api_key=${API_KEY}&language=en-US`
@@ -58,9 +54,8 @@ const MovieDetail = () => {
     };
 
     fetchData();
-  }, [id,type]);
+  }, [id, type]); // ✅ fixed dependencies
 
-  // Fetch episodes when season changes
   useEffect(() => {
     if (type === "tv" && selectedSeason) {
       fetch(
@@ -70,7 +65,7 @@ const MovieDetail = () => {
         .then((data) => setEpisodes(data.episodes || []))
         .catch((err) => console.error(err));
     }
-  }, [selectedSeason]);
+  }, [selectedSeason, type, id]); // ✅ fixed dependencies
 
   if (!data) return <div className="text-light text-center py-5">Loading...</div>;
 
@@ -83,7 +78,11 @@ const MovieDetail = () => {
       <Container className="movie-detail-content py-5">
         <Row>
           <Col md={4}>
-            <img src={imageUrl} alt={data.title || data.name} className="movie-poster" />
+            <img
+              src={imageUrl}
+              alt={data.title || data.name}
+              className="movie-poster"
+            />
           </Col>
           <Col md={8}>
             <h1>{data.title || data.name}</h1>
@@ -112,12 +111,14 @@ const MovieDetail = () => {
                   {showTrailer ? "Close Trailer" : "Watch Trailer"}
                 </Button>
               )}
-              <Button variant="primary" onClick={() => setShowPlayer(!showPlayer)}>
+              <Button
+                variant="primary"
+                onClick={() => setShowPlayer(!showPlayer)}
+              >
                 <FaPlay /> {showPlayer ? "Close Player" : "Watch Now"}
               </Button>
             </div>
 
-            {/* For TV Shows: Season & Episode Selector */}
             {type === "tv" && (
               <div className="mt-4">
                 <Dropdown onSelect={(val) => setSelectedSeason(Number(val))}>
@@ -142,7 +143,10 @@ const MovieDetail = () => {
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     {episodes.map((ep) => (
-                      <Dropdown.Item key={ep.episode_number} eventKey={ep.episode_number}>
+                      <Dropdown.Item
+                        key={ep.episode_number}
+                        eventKey={ep.episode_number}
+                      >
                         Episode {ep.episode_number}: {ep.name}
                       </Dropdown.Item>
                     ))}
@@ -153,7 +157,6 @@ const MovieDetail = () => {
           </Col>
         </Row>
 
-        {/* Trailer Embed */}
         {showTrailer && trailerKey && (
           <Row className="mt-4">
             <Col>
@@ -171,7 +174,6 @@ const MovieDetail = () => {
           </Row>
         )}
 
-        {/* Movie or TV Player Embed */}
         {showPlayer && (
           <Row className="mt-4">
             <Col>
@@ -193,12 +195,17 @@ const MovieDetail = () => {
           </Row>
         )}
 
-        {/* Cast Section */}
         <div className="cast-section mt-5">
           <h3>Cast</h3>
           <Row>
             {cast.map((actor) => (
-              <Col key={actor.id} xs={6} md={3} lg={2} className="text-center mb-4">
+              <Col
+                key={actor.id}
+                xs={6}
+                md={3}
+                lg={2}
+                className="text-center mb-4"
+              >
                 <img
                   src={
                     actor.profile_path
