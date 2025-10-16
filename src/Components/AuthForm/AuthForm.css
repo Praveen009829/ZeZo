@@ -1,0 +1,59 @@
+.auth-page {
+    min-height: 100vh;
+    background: url("https://assets.nflxext.com/ffe/siteui/vlv3/3f2df78f-3c6d-4f7c-a25e-8f68874e9af4/f1b96a8b-4bdf-4a86-9735-87b9f80a3cc3/IN-en-20231002-popsignuptwoweeks-perspective_alpha_website_large.jpg") center/cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-card {
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 2.5rem;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+.auth-card h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.auth-card .form-control {
+    background-color: #333;
+    border: none;
+    color: #fff;
+}
+
+.auth-card .form-control:focus {
+    box-shadow: none;
+    background-color: #444;
+}
+
+.auth-card button {
+    width: 100%;
+    margin-top: 1rem;
+    background-color: #e50914;
+    border: none;
+}
+
+.auth-card button:hover {
+    background-color: #f40612;
+}
+
+.auth-link {
+    color: #b3b3b3;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.auth-link a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.auth-link a:hover {
+    text-decoration: underline;
+}

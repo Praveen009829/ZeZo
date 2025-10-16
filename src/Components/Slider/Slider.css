@@ -1,0 +1,16 @@
+.slider-container {
+  background-color: #000;
+  padding: 10px 0;
+}
+
+.carousel-container {
+  padding-left: 20px;
+}
+
+.react-multi-carousel-item {
+  transition: transform 0.3s ease-in-out;
+}
+
+.react-multi-carousel-item:hover {
+  transform: scale(1.05);
+}
