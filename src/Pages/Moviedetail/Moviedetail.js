@@ -16,6 +16,15 @@ const MovieDetail = () => {
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [selectedEpisode, setSelectedEpisode] = useState(1);
   const [episodes, setEpisodes] = useState([]);
+  const EMBED_DOMAINS = [
+    "https://vidsrcme.su",
+    "https://vsrc.su",
+    "https://vidsrc-embed.su",
+    "https://vidsrc-embed.ru",
+  ];
+
+  // use the first one by default
+  const EMBED_BASE = EMBED_DOMAINS[0];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -182,9 +191,10 @@ const MovieDetail = () => {
                   className="embed-responsive-item"
                   src={
                     type === "movie"
-                      ? `https://vidsrc.to/embed/movie/${id}`
-                      : `https://vidsrc.to/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
+                      ? `${EMBED_BASE}/embed/movie/${id}`
+                      : `${EMBED_BASE}/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
                   }
+
 
                   allowFullScreen
                   title="Player"
