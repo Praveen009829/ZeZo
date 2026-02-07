@@ -3,12 +3,14 @@ import { useParams } from "react-router-dom";
 import { Container } from "react-bootstrap";
 import Slider from "../../Components/Slider/Slider";
 import {
+  searchMulti,
   fetchTrendingMovies,
-  fetchPopularTVShows
+  fetchPopularTVShows,
 } from "../../Api/Moviesapi";
 
 const Search = () => {
   const { query } = useParams();
+
   const [movieResults, setMovieResults] = useState([]);
   const [tvResults, setTvResults] = useState([]);
   const [noResults, setNoResults] = useState(false);
@@ -16,37 +18,37 @@ const Search = () => {
   const [recommendedTV, setRecommendedTV] = useState([]);
 
   useEffect(() => {
-    const searchData = async () => {
+    const loadSearch = async () => {
       try {
-        const movieRes = await fetch(
-          `https://api.themoviedb.org/3/search/movie?api_key=810956bc58bd77494f5bb7313c720908&query=${query}`
+        const results = await searchMulti(query);
+
+        const movies = results.filter(
+          (item) => item.media_type === "movie"
         );
-        const movieData = await movieRes.json();
-
-        const tvRes = await fetch(
-          `https://api.themoviedb.org/3/search/tv?api_key=810956bc58bd77494f5bb7313c720908&query=${query}`
+        const tvShows = results.filter(
+          (item) => item.media_type === "tv"
         );
-        const tvData = await tvRes.json();
 
-        setMovieResults(movieData.results || []);
-        setTvResults(tvData.results || []);
+        setMovieResults(movies);
+        setTvResults(tvShows);
 
-        if ((!movieData.results || movieData.results.length === 0) &&
-            (!tvData.results || tvData.results.length === 0)) {
+        if (movies.length === 0 && tvShows.length === 0) {
           setNoResults(true);
+
           const recMovies = await fetchTrendingMovies();
-          setRecommendedMovies(recMovies);
           const recTV = await fetchPopularTVShows();
+
+          setRecommendedMovies(recMovies);
           setRecommendedTV(recTV);
         } else {
           setNoResults(false);
         }
       } catch (error) {
-        console.error(error);
+        console.error("Search failed:", error);
       }
     };
 
-    searchData();
+    loadSearch();
   }, [query]);
 
   return (
@@ -55,18 +57,28 @@ const Search = () => {
       style={{
         margin: 0,
         padding: 0,
-        backgroundColor: "#111", // dark background
-        minHeight: "100vh"
+        backgroundColor: "#111",
+        minHeight: "100vh",
       }}
     >
-      {noResults && <h3 className="text-light mb-3 ps-3">No results found for "{query}"</h3>}
+      {noResults && (
+        <h3 className="text-light mb-3 ps-3">
+          No results found for "{query}"
+        </h3>
+      )}
 
       {movieResults.length > 0 && (
-        <Slider title={`Movie Results for "${query}"`} movies={movieResults} />
+        <Slider
+          title={`Movie Results for "${query}"`}
+          movies={movieResults}
+        />
       )}
 
       {tvResults.length > 0 && (
-        <Slider title={`TV Show Results for "${query}"`} movies={tvResults} />
+        <Slider
+          title={`TV Show Results for "${query}"`}
+          movies={tvResults}
+        />
       )}
 
       {noResults && (

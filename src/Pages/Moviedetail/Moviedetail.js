@@ -2,81 +2,64 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Container, Row, Col, Button, Dropdown } from "react-bootstrap";
 import { FaPlay, FaYoutube, FaStar } from "react-icons/fa";
+import {
+  fetchDetail,
+  fetchVideos,
+  fetchCredits,
+  fetchSeason
+} from "../../Api/Moviesapi";
 import "./MovieDetail.css";
-
-const API_KEY = "810956bc58bd77494f5bb7313c720908";
 
 const MovieDetail = () => {
   const { type, id } = useParams();
+
   const [data, setData] = useState(null);
   const [trailerKey, setTrailerKey] = useState(null);
   const [cast, setCast] = useState([]);
+  const [episodes, setEpisodes] = useState([]);
   const [showTrailer, setShowTrailer] = useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [selectedEpisode, setSelectedEpisode] = useState(1);
-  const [episodes, setEpisodes] = useState([]);
-  const EMBED_DOMAINS = [
-    "https://vidsrcme.su",
-    "https://vsrc.su",
-    "https://vidsrc-embed.su",
-    "https://vidsrc-embed.ru",
-  ];
 
-  // use the first one by default
-  const EMBED_BASE = EMBED_DOMAINS[0];
+  const EMBED_BASE = "https://vidsrcme.su";
 
+  // 🔹 Load movie / TV details
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(
-          `https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&language=en-US`
-        );
-        const data = await res.json();
-        setData(data);
+    const load = async () => {
+      const detail = await fetchDetail(type, id);
+      setData(detail);
 
-        const trailerRes = await fetch(
-          `https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${API_KEY}&language=en-US`
-        );
-        const trailerData = await trailerRes.json();
-        const key = trailerData.results?.find(
-          (vid) => vid.type === "Trailer" || vid.type === "Teaser"
-        )?.key;
-        setTrailerKey(key);
+      const videoData = await fetchVideos(type, id);
+      const trailer = videoData.results?.find(
+        (v) => v.type === "Trailer" || v.type === "Teaser"
+      );
+      setTrailerKey(trailer?.key || null);
 
-        const castRes = await fetch(
-          `https://api.themoviedb.org/3/${type}/${id}/credits?api_key=${API_KEY}&language=en-US`
-        );
-        const castData = await castRes.json();
-        setCast(castData.cast?.slice(0, 8) || []);
+      const creditData = await fetchCredits(type, id);
+      setCast(creditData.cast?.slice(0, 8) || []);
 
-        if (type === "tv") {
-          const epRes = await fetch(
-            `https://api.themoviedb.org/3/tv/${id}/season/1?api_key=${API_KEY}&language=en-US`
-          );
-          const epData = await epRes.json();
-          setEpisodes(epData.episodes || []);
-        }
-      } catch (error) {
-        console.error(error);
+      if (type === "tv") {
+        const seasonData = await fetchSeason(id, 1);
+        setEpisodes(seasonData.episodes || []);
       }
     };
 
-    fetchData();
-  }, [id, type]); // ✅ fixed dependencies
+    load();
+  }, [id, type]);
 
+  // 🔹 Load TV episodes when season changes
   useEffect(() => {
-    if (type === "tv" && selectedSeason) {
-      fetch(
-        `https://api.themoviedb.org/3/tv/${id}/season/${selectedSeason}?api_key=${API_KEY}&language=en-US`
-      )
-        .then((res) => res.json())
-        .then((data) => setEpisodes(data.episodes || []))
-        .catch((err) => console.error(err));
+    if (type === "tv") {
+      fetchSeason(id, selectedSeason).then((data) =>
+        setEpisodes(data.episodes || [])
+      );
     }
-  }, [selectedSeason, type, id]); // ✅ fixed dependencies
+  }, [selectedSeason, type, id]);
 
-  if (!data) return <div className="text-light text-center py-5">Loading...</div>;
+  if (!data) {
+    return <div className="text-light text-center py-5">Loading...</div>;
+  }
 
   const imageUrl = data.poster_path
     ? `https://image.tmdb.org/t/p/w500${data.poster_path}`
@@ -84,25 +67,25 @@ const MovieDetail = () => {
 
   return (
     <div className="movie-detail-page text-light">
-      <Container className="movie-detail-content py-5">
+      <Container className="py-5">
         <Row>
           <Col md={4}>
-            <img
-              src={imageUrl}
-              alt={data.title || data.name}
-              className="movie-poster"
-            />
+            <img src={imageUrl} alt={data.title || data.name} className="movie-poster" />
           </Col>
+
           <Col md={8}>
             <h1>{data.title || data.name}</h1>
             <p>{data.overview}</p>
+
             <p>
               <FaStar color="gold" /> {data.vote_average} / 10
             </p>
+
             <p>
               <strong>Genres:</strong>{" "}
-              {(data.genres || []).map((g) => g.name).join(", ")}
+              {data.genres?.map((g) => g.name).join(", ")}
             </p>
+
             <p>
               <strong>
                 {type === "movie" ? "Release Date:" : "First Air Date:"}
@@ -112,26 +95,20 @@ const MovieDetail = () => {
 
             <div className="d-flex gap-3 mt-3 flex-wrap">
               {trailerKey && (
-                <Button
-                  variant="danger"
-                  onClick={() => setShowTrailer(!showTrailer)}
-                >
-                  <FaYoutube />{" "}
-                  {showTrailer ? "Close Trailer" : "Watch Trailer"}
+                <Button variant="danger" onClick={() => setShowTrailer(!showTrailer)}>
+                  <FaYoutube /> {showTrailer ? "Close Trailer" : "Watch Trailer"}
                 </Button>
               )}
-              <Button
-                variant="primary"
-                onClick={() => setShowPlayer(!showPlayer)}
-              >
+
+              <Button variant="primary" onClick={() => setShowPlayer(!showPlayer)}>
                 <FaPlay /> {showPlayer ? "Close Player" : "Watch Now"}
               </Button>
             </div>
 
             {type === "tv" && (
               <div className="mt-4">
-                <Dropdown onSelect={(val) => setSelectedSeason(Number(val))}>
-                  <Dropdown.Toggle variant="secondary" id="dropdown-basic">
+                <Dropdown onSelect={(v) => setSelectedSeason(Number(v))}>
+                  <Dropdown.Toggle variant="secondary">
                     Season {selectedSeason}
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
@@ -145,9 +122,9 @@ const MovieDetail = () => {
 
                 <Dropdown
                   className="mt-2"
-                  onSelect={(val) => setSelectedEpisode(Number(val))}
+                  onSelect={(v) => setSelectedEpisode(Number(v))}
                 >
-                  <Dropdown.Toggle variant="secondary" id="episode-dropdown">
+                  <Dropdown.Toggle variant="secondary">
                     Episode {selectedEpisode}
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
@@ -169,16 +146,13 @@ const MovieDetail = () => {
         {showTrailer && trailerKey && (
           <Row className="mt-4">
             <Col>
-              <div className="embed-responsive embed-responsive-16by9">
-                <iframe
-                  className="embed-responsive-item"
-                  src={`https://www.youtube.com/embed/${trailerKey}`}
-                  allowFullScreen
-                  title="Trailer"
-                  width="100%"
-                  height="500"
-                ></iframe>
-              </div>
+              <iframe
+                src={`https://www.youtube.com/embed/${trailerKey}`}
+                width="100%"
+                height="500"
+                allowFullScreen
+                title="Trailer"
+              />
             </Col>
           </Row>
         )}
@@ -186,22 +160,17 @@ const MovieDetail = () => {
         {showPlayer && (
           <Row className="mt-4">
             <Col>
-              <div className="embed-responsive embed-responsive-16by9">
-                <iframe
-                  className="embed-responsive-item"
-                  src={
-                    type === "movie"
-                      ? `${EMBED_BASE}/embed/movie/${id}`
-                      : `${EMBED_BASE}/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
-                  }
-
-
-                  allowFullScreen
-                  title="Player"
-                  width="100%"
-                  height="500"
-                ></iframe>
-              </div>
+              <iframe
+                src={
+                  type === "movie"
+                    ? `${EMBED_BASE}/embed/movie/${id}`
+                    : `${EMBED_BASE}/embed/tv/${id}/${selectedSeason}/${selectedEpisode}`
+                }
+                width="100%"
+                height="500"
+                allowFullScreen
+                title="Player"
+              />
             </Col>
           </Row>
         )}
@@ -210,26 +179,18 @@ const MovieDetail = () => {
           <h3>Cast</h3>
           <Row>
             {cast.map((actor) => (
-              <Col
-                key={actor.id}
-                xs={6}
-                md={3}
-                lg={2}
-                className="text-center mb-4"
-              >
+              <Col key={actor.id} xs={6} md={3} lg={2} className="text-center mb-4">
                 <img
                   src={
                     actor.profile_path
                       ? `https://image.tmdb.org/t/p/w200${actor.profile_path}`
-                      : "https://via.placeholder.com/200x300?text=No+Image"
+                      : "https://via.placeholder.com/200x300"
                   }
                   alt={actor.name}
                   className="cast-img"
                 />
                 <h6 className="mt-2">{actor.name}</h6>
-                <p className="text-muted" style={{ fontSize: "0.85rem" }}>
-                  {actor.character}
-                </p>
+                <p className="text-muted">{actor.character}</p>
               </Col>
             ))}
           </Row>
